@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TeamFlow - Gestion de Proyectos</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0f172a;--surface:#1e293b;--surface2:#334155;--border:#475569;
+  --text:#f1f5f9;--muted:#94a3b8;--accent:#3b82f6;--accent2:#6366f1;
+  --green:#22c55e;--yellow:#eab308;--red:#ef4444;--orange:#f97316;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5}
+input,select,textarea{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 14px;font-family:inherit;font-size:14px;width:100%;outline:none;transition:.2s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+button{cursor:pointer;font-family:inherit;border:none;border-radius:8px;font-size:14px;font-weight:600;transition:.2s;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.btn{padding:10px 20px;background:var(--accent);color:#fff}
+.btn:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);padding:8px 16px}
+.btn-ghost:hover{background:var(--surface2);color:var(--text);border-color:var(--muted)}
+.btn-sm{padding:6px 12px;font-size:12px;min-height:32px}
+.btn-danger{background:transparent;color:var(--red);border:1px solid var(--red)}
+.btn-danger:hover{background:var(--red);color:#fff}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)}
+.flex{display:flex}.flex-col{flex-direction:column}.gap-2{gap:8px}.gap-4{gap:16px}.gap-6{gap:24px}.items-center{align-items:center}.justify-between{justify-content:space-between}
+.grid{display:grid}.grid-cols-1{grid-template-columns:1fr}.md-grid-3{grid-template-columns:repeat(3,1fr)}
+.text-sm{font-size:13.5px}.text-xs{font-size:11.5px}.text-muted{color:var(--muted)}
+.font-bold{font-weight:700}.uppercase{text-transform:uppercase}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:260px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.header{height:64px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 32px;justify-content:space-between}
+.content{flex:1;overflow-y:auto;padding:40px}
+.nav-item{display:flex;align-items:center;gap:14px;padding:14px 24px;cursor:pointer;color:var(--muted);font-size:14.5px;transition:.2s;border-right:4px solid transparent}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--surface2);color:var(--accent);border-right-color:var(--accent);font-weight:600}
+.progress-bar{height:10px;background:var(--surface2);border-radius:5px;overflow:hidden}
+.progress-fill{height:100%;transition:.6s cubic-bezier(0.4, 0, 0.2, 1)}
+.avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+.badge{padding:4px 10px;border-radius:14px;font-size:11px;font-weight:700;letter-spacing:0.5px}
+.status-badge{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.custom-scrollbar::-webkit-scrollbar{width:8px;height:8px}
+.custom-scrollbar::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:2000;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:100%;max-width:540px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.2)}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--muted)}
+.section-title{font-size:24px;font-weight:800;margin-bottom:32px;color:var(--text)}
+.kanban{display:flex;gap:24px;overflow-x:auto;padding-bottom:16px}
+.kanban-col{min-width:300px;display:flex;flex-direction:column;gap:16px}
+.task-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;cursor:pointer;transition:.2s}
+.task-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 12px -3px rgba(0,0,0,0.1)}
+.animate-in{animation:fadeIn 0.4s ease-out}@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.light{--bg:#f1f5f9;--surface:#ffffff;--surface2:#e2e8f0;--border:#cbd5e1;--text:#0f172a;--muted:#64748b}
+.toggle-theme{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useCallback,useContext,createContext,useRef,useMemo}=React;
+
+const SUPABASE_URL = 'https://semeysvpzwyaqhdippfo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_sGe8Da0mHSjdT5z6xs6qdw_YDde41U8';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const ROLES_ADMIN = ['gerente','senior'];
+const isAdmin = (rol) => ROLES_ADMIN.includes(rol);
+const ANIO_ACTUAL = new Date().getFullYear();
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+// Avance ponderado por peso de etapa
+const calcAvance = (pid, tasks, stages) => {
+  const pStages = stages.filter(s => s.project_id === pid);
+  if (pStages.length === 0) {
+    const pts = tasks.filter(t => t.project_id === pid);
+    return pts.length ? Math.round((pts.filter(t => t.estado === 'completada').length / pts.length) * 100) : 0;
+  }
+  let sumPeso = 0, sumPesoAvance = 0;
+  pStages.forEach(st => {
+    const stTasks = tasks.filter(t => t.stage_id === st.id);
+    const stPct = stTasks.length ? (stTasks.filter(t => t.estado === 'completada').length / stTasks.length) : 0;
+    sumPeso += st.peso;
+    sumPesoAvance += st.peso * stPct;
+  });
+  return sumPeso > 0 ? Math.round((sumPesoAvance / sumPeso) * 100) : 0;
+};
+
+// Horas de vacaciones por usuario/mes (dias habiles * 8h)
+const calcVacHours = (vacations, uid, mes, anio) => {
+  const uVacs = vacations.filter(v => v.user_id === uid);
+  let days = 0;
+  const mStart = new Date(anio, mes - 1, 1);
+  const mEnd = new Date(anio, mes, 0);
+  uVacs.forEach(v => {
+    const vs = new Date(v.fecha_inicio);
+    const ve = new Date(v.fecha_fin);
+    const s = vs > mStart ? vs : mStart;
+    const e = ve < mEnd ? ve : mEnd;
+    if (s > e) return;
+    const d = new Date(s);
+    while (d <= e) { if (d.getDay() !== 0 && d.getDay() !== 6) days++; d.setDate(d.getDate() + 1); }
+  });
+  return days * 8;
+};
+
+const DataCtx = createContext();
+const AuthCtx = createContext();
+const ToastCtx = createContext();
+
+// PROVIDERS
+function ToastProvider({children}){
+  const [toasts,setToasts]=useState([]);
+  const toast=(msg,type='success')=>{
+    const id=Math.random();
+    setToasts(t=>[...t,{id,msg,type}]);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),4000);
+  };
+  return(
+    <ToastCtx.Provider value={toast}>
+      {children}
+      <div style={{position:'fixed',bottom:24,right:24,zindex:9999,display:'flex',flexDirection:'column',gap:12}}>
+        {toasts.map(t=>(
+          <div key={t.id} style={{padding:'14px 20px',borderRadius:10,color:'#fff',fontSize:14,fontWeight:600,background:t.type==='error'?'#ef4444':'#22c55e',boxShadow:'0 10px 15px -3px rgba(0,0,0,0.1)'}}>
+            {t.msg}
+          </div>
+        ))}
+      </div>
+    </ToastCtx.Provider>
+  );
+}
+
+function AuthProvider({children}){
+  const [user,setUser]=useState(null);
+  const [profile,setProfile]=useState(null);
+  const [loading,setLoading]=useState(true);
+  const load=async(u)=>{
+    if(!u){setProfile(null);setLoading(false);return;}
+    // Intenta primero por auth_user_id (post-migración multi-tenant)
+    let {data}=await sb.from('profiles').select('*').eq('auth_user_id',u.id).single();
+    // Si no encuentra, usa el id directo (usuarios demo existentes con id = auth.users.id)
+    if(!data){
+      const res=await sb.from('profiles').select('*').eq('id',u.id).single();
+      data=res.data||null;
+    }
+    setProfile(data); setLoading(false);
+  };
+  useEffect(()=>{
+    sb.auth.getSession().then(({data:{session}})=>{setUser(session?.user);load(session?.user);});
+    const {data:{subscription}}=sb.auth.onAuthStateChange((_e,s)=>{setUser(s?.user);load(s?.user);});
+    return ()=>subscription.unsubscribe();
+  },[]);
+  return <AuthCtx.Provider value={{user,profile,loading}}>{children}</AuthCtx.Provider>;
+}
+
+function DataProvider({children}){
+  const [data,setData]=useState({projects:[],tasks:[],stages:[],profiles:[],notes:[],hours:[],vacations:[],audit:[],capacity:[]});
+  const reload=async()=>{
+    const [p,t,s,u,n,h,v,a,c]=await Promise.all([
+      sb.from('projects').select('*').order('created_at',{ascending:false}),
+      sb.from('tasks').select('*'),
+      sb.from('project_stages').select('*').order('orden'),
+      sb.from('profiles').select('*'),
+      sb.from('project_notes').select('*, profiles(nombre)'),
+      sb.from('hour_assignments').select('*'),
+      sb.from('vacations').select('*'),
+      sb.from('audit_log').select('*, profiles(nombre)').order('created_at',{ascending:false}).limit(100),
+      sb.from('user_capacity').select('*')
+    ]);
+    setData({projects:p.data||[],tasks:t.data||[],stages:s.data||[],profiles:u.data||[],notes:n.data||[],hours:h.data||[],vacations:v.data||[],audit:a.data||[],capacity:c.data||[]});
+  };
+  useEffect(()=>{reload();},[]);
+  return <DataCtx.Provider value={{...data,reload}}>{children}</DataCtx.Provider>;
+}
+
+// HELPERS UI
+const ProgressBar = ({value,color}) => (
+  <div className="progress-bar"><div className="progress-fill" style={{width:`${value}%`,background:color||'var(--accent)'}}/></div>
+);
+const Avatar = ({name,color,size=36}) => (
+  <div className="avatar" style={{width:size,height:size,background:color||'#475569',fontSize:size*0.4}}>{name?name[0].toUpperCase():'?'}</div>
+);
+
+// CONFIRM MODAL
+function ConfirmModal({open,onClose,onConfirm,title}){
+  if(!open) return null;
+  return(
+    <div className="modal-overlay"><div className="modal">
+      <h3 className="mb-6" style={{fontSize:18,fontWeight:800}}>{title||'Confirmar accion'}</h3>
+      <p className="text-muted mb-8">Esta accion no se puede deshacer.</p>
+      <div className="flex justify-between"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn-danger" onClick={()=>{onConfirm();onClose();}}>Eliminar</button></div>
+    </div></div>
+  );
+}
+
+// PROJECT FORM
+function ProjectForm({editing,onClose,reload}){
+  const {profiles}=useContext(DataCtx);
+  const {profile}=useContext(AuthCtx);
+  const toast=useContext(ToastCtx);
+  const [f,setF]=useState({nombre:editing?.nombre||'',tipo:editing?.tipo||'cliente',cliente:editing?.cliente||'',descripcion:editing?.descripcion||'',fecha_inicio:editing?.fecha_inicio||new Date().toISOString().split('T')[0],fecha_fin:editing?.fecha_fin||'',estado:editing?.estado||'planificado',prioridad:editing?.prioridad||'media',color:editing?.color||'#3b82f6',presupuesto_horas:editing?.presupuesto_horas||100,nivel_riesgo:editing?.nivel_riesgo||'sin_riesgo'});
+  const s=(k,v)=>setF(x=>({...x,[k]:v}));
+  const save=async()=>{
+    if(!f.nombre||!f.fecha_fin){toast('Nombre y fecha fin son requeridos','error');return;}
+    const payload={...f,presupuesto_horas:parseInt(f.presupuesto_horas)};
+    if(editing){
+      await sb.from('projects').update(payload).eq('id',editing.id);
+      toast('Proyecto actualizado');
+    } else {
+      payload.created_by=profile.id;
+      await sb.from('projects').insert(payload);
+      toast('Proyecto creado');
+    }
+    reload(); onClose();
+  };
+  return(
+    <div className="modal-overlay"><div className="modal" style={{maxWidth:600,maxHeight:'90vh',overflowY:'auto'}}>
+      <h3 className="mb-8" style={{fontSize:22,fontWeight:800}}>{editing?'Editar Proyecto':'Nuevo Proyecto'}</h3>
+      <div className="form-group"><label>Nombre *</label><input value={f.nombre} onChange={e=>s('nombre',e.target.value)}/></div>
+      <div className="grid" style={{gridTemplateColumns:'1fr 1fr',gap:16}}>
+        <div className="form-group"><label>Tipo</label><select value={f.tipo} onChange={e=>s('tipo',e.target.value)}><option value="cliente">Cliente</option><option value="interno">Interno</option></select></div>
+        <div className="form-group"><label>Cliente</label><input value={f.cliente} onChange={e=>s('cliente',e.target.value)}/></div>
+      </div>
+      <div className="form-group"><label>Descripcion</label><textarea value={f.descripcion} onChange={e=>s('descripcion',e.target.value)} rows="3"/></div>
+      <div className="grid" style={{gridTemplateColumns:'1fr 1fr',gap:16}}>
+        <div className="form-group"><label>Fecha Inicio *</label><input type="date" value={f.fecha_inicio} onChange={e=>s('fecha_inicio',e.target.value)}/></div>
+        <div className="form-group"><label>Fecha Fin *</label><input type="date" value={f.fecha_fin} onChange={e=>s('fecha_fin',e.target.value)}/></div>
+      </div>
+      <div className="grid" style={{gridTemplateColumns:'1fr 1fr 1fr',gap:16}}>
+        <div className="form-group"><label>Estado</label><select value={f.estado} onChange={e=>s('estado',e.target.value)}><option value="planificado">Planificado</option><option value="activo">Activo</option><option value="pausado">Pausado</option><option value="finalizado">Finalizado</option><option value="cancelado">Cancelado</option></select></div>
+        <div className="form-group"><label>Prioridad</label><select value={f.prioridad} onChange={e=>s('prioridad',e.target.value)}><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select></div>
+        <div className="form-group"><label>Horas Presup.</label><input type="number" value={f.presupuesto_horas} onChange={e=>s('presupuesto_horas',e.target.value)}/></div>
+      </div>
+      <div className="flex justify-between mt-8"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn" onClick={save}>Guardar</button></div>
+    </div></div>
+  );
+}
+
+// VISTAS
+function Login(){
+  const [email,setEmail]=useState('');
+  const [pass,setPass]=useState('123456');
+  const [nombre,setNombre]=useState('');
+  const [username,setUsername]=useState('');
+  const [isSignUp,setIsSignUp]=useState(false);
+  const [isForgotPassword,setIsForgotPassword]=useState(false);
+  const toast=useContext(ToastCtx);
+
+  const handle=async(e)=>{
+    e.preventDefault();
+    if(isForgotPassword){
+      const {error}=await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + window.location.pathname
+      });
+      if(error){
+        toast(error.message,'error');
+      } else {
+        toast('Enlace de recuperación enviado. Revisa tu correo.','success');
+        setIsForgotPassword(false);
+      }
+      return;
+    }
+
+    if(isSignUp){
+      if(!nombre||!username){
+        toast('Por favor completa todos los campos','error');
+        return;
+      }
+      const cleanUsername = username.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const {data, error}=await sb.auth.signUp({
+        email,
+        password: pass,
+        options: {
+          data: {
+            nombre: nombre,
+            username: cleanUsername
+          }
+        }
+      });
+      if(error) {
+        toast(error.message,'error');
+      } else {
+        toast('Cuenta registrada con éxito. Iniciando sesión...','success');
+      }
+    } else {
+      const {error}=await sb.auth.signInWithPassword({email,password:pass});
+      if(error) toast(error.message,'error');
+    }
+  };
+
+  return(
+    <div className="flex items-center justify-center" style={{minHeight:'100vh',background:'radial-gradient(circle at top right, var(--surface), var(--bg))'}}>
+      <div className="card animate-in" style={{width:400,padding:40}}>
+        <h1 style={{textAlign:'center',marginBottom:40,fontSize:32,fontWeight:900,color:'var(--accent)'}}>TeamFlow</h1>
+        
+        {isForgotPassword ? (
+          <form onSubmit={handle} className="flex flex-col gap-6">
+            <h3 style={{textAlign:'center',fontSize:18,fontWeight:700,marginBottom:10}}>Recuperar Contraseña</h3>
+            <p className="text-xs text-muted text-center" style={{marginTop:-10}}>Ingresá tu correo y te enviaremos un enlace para restablecer tu contraseña.</p>
+            <div className="form-group"><label>Email Corporativo</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="ejemplo@llyasoc.com"/></div>
+            <button className="btn w-full" style={{padding:14,fontSize:16}}>Enviar Enlace</button>
+            <button type="button" className="btn-ghost btn-sm w-full" onClick={()=>setIsForgotPassword(false)}>Volver a Iniciar Sesión</button>
+          </form>
+        ) : (
+          <>
+            <form onSubmit={handle} className="flex flex-col gap-6">
+              {isSignUp && (
+                <>
+                  <div className="form-group"><label>Nombre Completo</label><input type="text" value={nombre} onChange={e=>setNombre(e.target.value)} required placeholder="Ej. Tu Nombre"/></div>
+                  <div className="form-group"><label>Nombre de Usuario</label><input type="text" value={username} onChange={e=>setUsername(e.target.value)} required placeholder="ej. tunombre"/></div>
+                </>
+              )}
+              <div className="form-group"><label>Email Corporativo</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="ejemplo@llyasoc.com"/></div>
+              <div className="form-group">
+                <label>Contraseña</label>
+                <input type="password" value={pass} onChange={e=>setPass(e.target.value)} required/>
+                {!isSignUp && (
+                  <div style={{textAlign:'right',marginTop:6}}>
+                    <span className="text-xs text-muted" style={{cursor:'pointer',textDecoration:'underline'}} onClick={()=>setIsForgotPassword(true)}>¿Olvidaste tu contraseña?</span>
+                  </div>
+                )}
+              </div>
+              <button className="btn w-full" style={{padding:14,fontSize:16}}>{isSignUp ? 'Crear Cuenta' : 'Entrar al Sistema'}</button>
+            </form>
+
+            <div style={{marginTop:24,textAlign:'center'}}>
+              <button className="btn-ghost btn-sm w-full" onClick={()=>setIsSignUp(!isSignUp)}>
+                {isSignUp ? '¿Ya tienes cuenta? Inicia Sesión' : '¿No tienes cuenta? Regístrate gratis'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Dashboard(){
+  const {projects,tasks,stages,profiles,hours,capacity,vacations,audit}=useContext(DataCtx);
+  const mesActual=new Date().getMonth()+1;
+  const active=projects.filter(p=>p.estado==='activo').length;
+  const finished=projects.filter(p=>p.estado==='finalizado').length;
+  const avgProgress=projects.length?Math.round(projects.reduce((a,p)=>a+calcAvance(p.id,tasks,stages),0)/projects.length):0;
+  const totalTasks=tasks.length;
+  const completedTasks=tasks.filter(t=>t.estado==='completada').length;
+  const blockedTasks=tasks.filter(t=>t.estado==='bloqueada').length;
+
+  const getMonthHours=(uid)=>hours.filter(h=>h.user_id===uid&&h.mes===mesActual&&h.anio===ANIO_ACTUAL).reduce((a,b)=>a+Number(b.horas_planificadas),0);
+  const getMonthCap=(u)=>{
+    const rec=capacity.find(c=>c.user_id===u.id&&c.mes===mesActual&&c.anio===ANIO_ACTUAL);
+    const base=rec?Math.max(0,(rec.horas_totales||160)-(rec.horas_ociosas||0)):(u.horas_disponibles_default||160);
+    return Math.max(0,base-calcVacHours(vacations,u.id,mesActual,ANIO_ACTUAL));
+  };
+  const totalHorasAsig=profiles.reduce((a,u)=>a+getMonthHours(u.id),0);
+  const totalHorasDisp=profiles.reduce((a,u)=>a+getMonthCap(u),0);
+
+  const estadoColor={activo:'var(--green)',planificado:'var(--accent)',pausado:'var(--yellow)',finalizado:'var(--muted)',cancelado:'var(--red)'};
+  const prioColor={alta:'var(--red)',media:'var(--yellow)',baja:'var(--green)'};
+
+  return(
+    <div className="animate-in">
+      <h2 className="section-title">Resumen Ejecutivo</h2>
+      <div className="grid" style={{gridTemplateColumns:'repeat(auto-fill, minmax(180px, 1fr))',gap:16,marginBottom:32}}>
+        <div className="card" style={{borderLeft:'4px solid var(--accent)',padding:20}}>
+          <div className="text-xs text-muted font-bold uppercase mb-2">Proyectos Activos</div>
+          <div style={{fontSize:36,fontWeight:900}}>{active}</div>
+          <div className="text-xs text-muted mt-1">{finished} finalizados</div>
+        </div>
+        <div className="card" style={{borderLeft:'4px solid var(--green)',padding:20}}>
+          <div className="text-xs text-muted font-bold uppercase mb-2">Avance Promedio</div>
+          <div style={{fontSize:36,fontWeight:900}}>{avgProgress}%</div>
+          <ProgressBar value={avgProgress} color="var(--green)"/>
+        </div>
+        <div className="card" style={{borderLeft:'4px solid var(--yellow)',padding:20}}>
+          <div className="text-xs text-muted font-bold uppercase mb-2">Tareas</div>
+          <div style={{fontSize:36,fontWeight:900}}>{completedTasks}<span style={{fontSize:16,color:'var(--muted)',fontWeight:400}}>/{totalTasks}</span></div>
+          <div className="text-xs mt-1" style={{color:blockedTasks>0?'var(--red)':'var(--muted)'}}>{blockedTasks} bloqueadas</div>
+        </div>
+        <div className="card" style={{borderLeft:'4px solid var(--orange)',padding:20}}>
+          <div className="text-xs text-muted font-bold uppercase mb-2">Horas {MESES[mesActual-1]}</div>
+          <div style={{fontSize:36,fontWeight:900}}>{totalHorasAsig}<span style={{fontSize:14,color:'var(--muted)',fontWeight:400}}>h</span></div>
+          <div className="text-xs text-muted mt-1">de {totalHorasDisp}h disponibles</div>
+        </div>
+      </div>
+
+      <div className="grid" style={{gridTemplateColumns:'1.2fr 1fr',gap:32,marginBottom:32}}>
+        <div className="card">
+          <h3 className="mb-6" style={{fontSize:18,fontWeight:700}}>Proyectos</h3>
+          <div className="flex flex-col gap-4" style={{maxHeight:340,overflowY:'auto'}}>
+            {projects.map(p=>{
+              const av=calcAvance(p.id,tasks,stages);
+              return(
+                <div key={p.id} style={{padding:'12px 16px',background:'var(--surface2)',borderRadius:10,borderLeft:`3px solid ${estadoColor[p.estado]||'var(--border)'}`}}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-bold text-sm">{p.nombre}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="badge" style={{background:estadoColor[p.estado]+'22',color:estadoColor[p.estado],fontSize:9}}>{p.estado}</span>
+                      <span className="badge" style={{background:prioColor[p.prioridad]+'22',color:prioColor[p.prioridad],fontSize:9}}>{p.prioridad}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1"><ProgressBar value={av} color={p.color}/></div>
+                    <span className="text-xs font-bold" style={{color:p.color,minWidth:32}}>{av}%</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="card">
+          <h3 className="mb-6" style={{fontSize:18,fontWeight:700}}>Carga del Equipo - {MESES[mesActual-1]}</h3>
+          <div className="flex flex-col gap-4">
+            {profiles.map(u=>{
+              const asig=getMonthHours(u.id);
+              const disp=getMonthCap(u);
+              const pct=disp>0?Math.round((asig/disp)*100):0;
+              const over=asig>disp;
+              return(
+                <div key={u.id}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <Avatar name={u.nombre} size={24} color={u.avatar_color}/>
+                      <span className="text-sm font-bold">{u.nombre}</span>
+                    </div>
+                    <span className="text-xs font-bold" style={{color:over?'var(--red)':pct>=80?'var(--yellow)':'var(--green)'}}>{asig}h / {disp}h ({pct}%)</span>
+                  </div>
+                  <ProgressBar value={Math.min(pct,100)} color={over?'var(--red)':pct>=80?'var(--yellow)':'var(--green)'}/>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <h3 className="mb-6" style={{fontSize:18,fontWeight:700}}>Ultimos Cambios</h3>
+        {audit.length>0 ? (
+          <div className="flex flex-col gap-3" style={{maxHeight:200,overflowY:'auto'}}>
+            {audit.slice(0,8).map(l=>(
+              <div key={l.id} className="flex items-center gap-4 text-sm" style={{padding:'8px 12px',background:'var(--surface2)',borderRadius:8}}>
+                <Avatar name={l.profiles?.nombre} size={22}/>
+                <span className="font-bold" style={{minWidth:90}}>{l.profiles?.nombre}</span>
+                <span className="badge status-badge" style={{fontSize:10}}>{l.accion}</span>
+                <span className="text-muted flex-1" style={{fontSize:12}}>{l.descripcion}</span>
+                <span className="text-xs text-muted">{new Date(l.created_at).toLocaleDateString()}</span>
+              </div>
+            ))}
+          </div>
+        ) : <div className="text-sm text-muted">Sin registros de auditoria aun.</div>}
+      </div>
+    </div>
+  );
+}
+
+function ProjectList({onSelect}){
+  const {profile}=useContext(AuthCtx);
+  const {projects,tasks,stages,reload}=useContext(DataCtx);
+  const toast=useContext(ToastCtx);
+  const admin=isAdmin(profile?.rol);
+  const [showForm,setShowForm]=useState(false);
+  const [editProj,setEditProj]=useState(null);
+  const [confirm,setConfirm]=useState(null);
+  const calc=(pid)=>calcAvance(pid,tasks,stages);
+  const del=async(id)=>{ await sb.from('projects').delete().eq('id',id); toast('Proyecto eliminado'); reload(); };
+  return(
+    <div className="animate-in">
+      <div className="flex justify-between items-center mb-10">
+        <h2 className="section-title" style={{marginBottom:0}}>Cartera de Proyectos</h2>
+        {admin && <button className="btn" onClick={()=>{setEditProj(null);setShowForm(true);}}>Crear Proyecto</button>}
+      </div>
+      <div className="grid" style={{gridTemplateColumns:'repeat(auto-fill, minmax(350px, 1fr))',gap:40}}>
+        {projects.map(p=>(
+          <div key={p.id} className="card" style={{transition:'0.3s'}}>
+            <div className="flex justify-between items-start mb-6" style={{cursor:'pointer'}} onClick={()=>onSelect(p.id)}>
+              <h3 style={{fontSize:20,fontWeight:800}}>{p.nombre}</h3>
+              <span className="badge status-badge">{p.estado}</span>
+            </div>
+            <p className="text-sm text-muted mb-8" style={{minHeight:42,overflow:'hidden',cursor:'pointer'}} onClick={()=>onSelect(p.id)}>{p.descripcion || 'Sin descripcion.'}</p>
+            <div className="flex justify-between text-xs mb-3 font-bold"><span className="text-muted">AVANCE</span><span style={{color:p.color}}>{calc(p.id)}%</span></div>
+            <ProgressBar value={calc(p.id)} color={p.color}/>
+            {admin && <div className="flex gap-2 mt-6" style={{borderTop:'1px solid var(--border)',paddingTop:16}}>
+              <button className="btn-ghost btn-sm" onClick={()=>{setEditProj(p);setShowForm(true);}}>Editar</button>
+              <button className="btn-danger btn-sm" onClick={()=>setConfirm(p.id)}>Borrar</button>
+            </div>}
+          </div>
+        ))}
+      </div>
+      {showForm && <ProjectForm editing={editProj} onClose={()=>setShowForm(false)} reload={reload}/>}
+      <ConfirmModal open={!!confirm} onClose={()=>setConfirm(null)} onConfirm={()=>del(confirm)} title="Eliminar este proyecto?"/>
+    </div>
+  );
+}
+
+function ProjectDetail({projectId,setPage}){
+  const {profile}=useContext(AuthCtx);
+  const {projects,tasks,stages,notes,profiles,hours,capacity,vacations,reload}=useContext(DataCtx);
+  const toast=useContext(ToastCtx);
+  const admin=isAdmin(profile?.rol);
+  const [showStage,setShowStage]=useState(false);
+  const [editStage,setEditStage]=useState(null);
+  const [confirmDel,setConfirmDel]=useState(null);
+  const [newNote,setNewNote]=useState('');
+  const p=projects.find(x=>x.id===projectId);
+  if(!p) return <div className="p-10">Cargando datos del proyecto...</div>;
+  const pTasks=tasks.filter(t=>t.project_id===projectId);
+  const pStages=stages.filter(s=>s.project_id===projectId).sort((a,b)=>a.orden-b.orden);
+  const pNotes=notes.filter(n=>n.project_id===projectId).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+
+  const toggle=async(t)=>{
+    const est=t.estado==='completada'?'pendiente':'completada';
+    await sb.from('tasks').update({estado:est,updated_at:new Date().toISOString()}).eq('id',t.id);
+    reload();
+  };
+
+  const bulk=async(sid)=>{
+    const l=prompt('Carga Masiva: Pegue su lista de tareas aqui (una por linea):');
+    if(!l) return;
+    const items=l.split('\n').map(x=>x.trim()).filter(x=>x);
+    if(items.length===0) return;
+    await sb.from('tasks').insert(items.map(titulo=>({project_id:projectId,stage_id:sid,titulo,estado:'pendiente',prioridad:'media',created_by:profile.id})));
+    reload();
+  };
+
+  const addNote=async()=>{
+    if(!newNote) return;
+    await sb.from('project_notes').insert({project_id:projectId,user_id:profile.id,contenido:newNote});
+    setNewNote(''); reload();
+  };
+
+  const delStage=async(id)=>{ await sb.from('tasks').delete().eq('stage_id',id); await sb.from('project_stages').delete().eq('id',id); toast('Etapa eliminada'); reload(); };
+  const delTask=async(id)=>{ await sb.from('tasks').delete().eq('id',id); reload(); };
+
+  return(
+    <div className="animate-in">
+      <div className="flex justify-between items-end mb-12">
+        <div>
+          <button className="btn-ghost btn-sm mb-6" onClick={()=>setPage('projects')}>Volver al Listado</button>
+          <h2 style={{fontSize:36,fontWeight:900,letterSpacing:'-1px'}}>{p.nombre}</h2>
+          <div className="text-sm text-muted mt-1">Cliente: <span className="font-bold text-text">{p.cliente || 'Interno'}</span> | Inicio: <span className="font-bold text-text">{p.fecha_inicio}</span></div>
+        </div>
+        <div className="flex gap-4">
+          {admin && <button className="btn" onClick={()=>{setEditStage(null);setShowStage(true);}}>Cargar Etapa</button>}
+        </div>
+      </div>
+
+      <div className="grid md-grid-3 gap-8 mb-16">
+        <div className="card"><div className="text-xs text-muted font-bold uppercase mb-2">Estado Actual</div><div className="font-bold uppercase text-xl">{p.estado}</div></div>
+        <div className="card"><div className="text-xs text-muted font-bold uppercase mb-2">Fecha Final Estimada</div><div className="font-bold text-xl">{p.fecha_fin}</div></div>
+        <div className="card">
+          <div className="text-xs text-muted font-bold uppercase mb-2">Avance Global</div>
+          <div className="flex items-center gap-6">
+            <div style={{fontSize:28,fontWeight:900}}>{calcAvance(projectId,pTasks,pStages)}%</div>
+            <div className="flex-1"><ProgressBar value={calcAvance(projectId,pTasks,pStages)} color={p.color}/></div>
+          </div>
+        </div>
+      </div>
+
+      <h3 className="section-title">Etapas y Listas de Control</h3>
+      <div className="grid" style={{gridTemplateColumns:'repeat(auto-fill, minmax(360px, 1fr))',gap:40,marginBottom:60}}>
+        {pStages.map(st=>{
+          const stTasks=pTasks.filter(t=>t.stage_id===st.id);
+          const pct=stTasks.length?Math.round((stTasks.filter(t=>t.estado==='completada').length/stTasks.length)*100):0;
+          return(
+            <div key={st.id} className="card flex flex-col" style={{minHeight:400,background:'var(--surface)'}}>
+              <div className="flex justify-between items-start mb-6 pb-6" style={{borderBottom:'1px solid var(--border)'}}>
+                <div>
+                  <h4 style={{fontSize:18,fontWeight:800}}>{st.nombre}</h4>
+                  <div className="text-xs text-muted mt-1 font-bold uppercase">Peso: {st.peso} | {stTasks.length} Tareas</div>
+                </div>
+                <div className="flex gap-2">
+                  <button className="btn-ghost btn-sm" onClick={()=>bulk(st.id)}>Cargar</button>
+                  {admin && <button className="btn-ghost btn-sm" onClick={()=>{setEditStage(st);setShowStage(true);}}>Editar</button>}
+                  {admin && <button className="btn-danger btn-sm" onClick={()=>setConfirmDel({type:'stage',id:st.id})}>Borrar</button>}
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto custom-scrollbar mb-6 pr-2">
+                {stTasks.map(t=>(
+                  <div key={t.id} className="flex items-center gap-4 py-4 border-b border-white-5">
+                    <input type="checkbox" checked={t.estado==='completada'} readOnly style={{width:18,height:18,cursor:'pointer'}} onClick={()=>toggle(t)}/>
+                    <span className={`text-base flex-1 ${t.estado==='completada'?'text-muted line-through':''}`} style={{cursor:'pointer'}} onClick={()=>toggle(t)}>{t.titulo}</span>
+                    {admin && <button className="btn-danger btn-sm" style={{fontSize:10,padding:'2px 8px'}} onClick={()=>delTask(t.id)}>x</button>}
+                  </div>
+                ))}
+                {stTasks.length===0 && <div className="text-center p-10 text-muted italic text-sm">Sin tareas cargadas.</div>}
+              </div>
+              <div className="mt-auto">
+                <div className="flex justify-between text-xs mb-2 font-bold"><span>AVANCE DE ETAPA</span><span>{pct}%</span></div>
+                <ProgressBar value={pct} color="var(--accent)"/>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {admin && <ProjectHourGrid projectId={projectId} profiles={profiles} hours={hours} capacity={capacity} vacations={vacations} reload={reload}/>}
+
+      <div className="grid" style={{gridTemplateColumns:'1.5fr 1fr',gap:48}}>
+        <div className="card">
+          <h3 className="mb-6" style={{fontSize:20,fontWeight:800}}>Bitacora de Notas</h3>
+          <div className="custom-scrollbar mb-8" style={{maxHeight:350,overflow:'auto',display:'flex',flexDirection:'column',gap:16}}>
+            {pNotes.map(n=>(
+              <div key={n.id} className="p-5 rounded-xl" style={{background:'var(--surface2)'}}>
+                <p className="text-base mb-4" style={{lineHeight:1.6}}>{n.contenido}</p>
+                <div className="flex items-center gap-3">
+                  <Avatar name={n.profiles?.nombre} size={24}/>
+                  <span className="text-xs font-bold">{n.profiles?.nombre}</span>
+                  <span className="text-xs text-muted">| {new Date(n.created_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-4">
+            <input value={newNote} onChange={e=>setNewNote(e.target.value)} placeholder="Añadir una nota al proyecto..." onKeyDown={e=>e.key==='Enter'&&addNote()}/>
+            <button className="btn" onClick={addNote}>Cargar</button>
+          </div>
+        </div>
+        <div className="card">
+          <h3 className="mb-6" style={{fontSize:20,fontWeight:800}}>Detalles Generales</h3>
+          <p className="text-base text-muted mb-8" style={{lineHeight:1.7}}>{p.descripcion || 'Sin descripcion detallada registrada.'}</p>
+          <div className="grid" style={{gridTemplateColumns:'1fr 1fr',gap:24,paddingTop:24,borderTop:'1px solid var(--border)'}}>
+            <div><label className="uppercase font-bold text-xs text-muted mb-2 block">Prioridad</label><div className="font-bold text-lg uppercase" style={{color:p.prioridad==='alta'?'var(--red)':p.prioridad==='media'?'var(--yellow)':'var(--green)'}}>{p.prioridad}</div></div>
+            <div><label className="uppercase font-bold text-xs text-muted mb-2 block">Presupuesto</label><div className="font-bold text-lg">{p.presupuesto_horas} Horas</div></div>
+          </div>
+        </div>
+      </div>
+      {showStage && <StageForm projectId={projectId} editing={editStage} onClose={()=>{setShowStage(false);setEditStage(null);}} reload={reload}/>}
+      <ConfirmModal open={!!confirmDel} onClose={()=>setConfirmDel(null)} onConfirm={()=>confirmDel?.type==='stage'&&delStage(confirmDel.id)} title="Eliminar esta etapa y sus tareas?"/>
+    </div>
+  );
+}
+
+function StageForm({projectId,editing,onClose,reload}){
+  const {profiles,stages}=useContext(DataCtx);
+  const [f,setF]=useState({nombre:editing?.nombre||'',peso:editing?.peso||5,responsable_id:editing?.responsable_id||''});
+  const toast=useContext(ToastCtx);
+  const save=async()=>{
+    if(!f.nombre){toast('Nombre requerido','error');return;}
+    const orden=editing?.orden||(stages.filter(s=>s.project_id===projectId).length+1);
+    const payload={nombre:f.nombre,peso:parseInt(f.peso)||5,responsable_id:f.responsable_id||null,project_id:projectId,orden};
+    if(editing) await sb.from('project_stages').update(payload).eq('id',editing.id);
+    else await sb.from('project_stages').insert(payload);
+    toast(editing?'Etapa actualizada':'Etapa creada'); reload(); onClose();
+  };
+  return(
+    <div className="modal-overlay"><div className="modal">
+      <h3 className="mb-8" style={{fontSize:22,fontWeight:800}}>{editing?'Editar Etapa':'Nueva Etapa'}</h3>
+      <div className="form-group"><label>Nombre *</label><input value={f.nombre} onChange={e=>setF({...f,nombre:e.target.value})}/></div>
+      <div className="form-group"><label>Peso (1-10)</label><input type="number" min="1" max="10" value={f.peso} onChange={e=>setF({...f,peso:e.target.value})}/></div>
+      <div className="form-group"><label>Responsable</label><select value={f.responsable_id} onChange={e=>setF({...f,responsable_id:e.target.value})}><option value="">Sin asignar</option>{profiles.map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}</select></div>
+      <div className="flex justify-between mt-8"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn" onClick={save}>Guardar</button></div>
+    </div></div>
+  );
+}
+
+// RESTAURANDO KANBAN REAL
+function Tasks(){
+  const {tasks,projects,reload}=useContext(DataCtx);
+  const cols=[{k:'pendiente',l:'Pendientes',c:'var(--muted)'},{k:'en_progreso',l:'En Progreso',c:'var(--accent)'},{k:'bloqueada',l:'Bloqueada',c:'var(--red)'},{k:'completada',l:'Completadas',c:'var(--green)'}];
+  const update=async(id,est)=>{ await sb.from('tasks').update({estado:est}).eq('id',id); reload(); };
+  return(
+    <div className="animate-in">
+      <h2 className="section-title">Flujo de Trabajo (Kanban)</h2>
+      <div className="kanban custom-scrollbar">
+        {cols.map(c=>(
+          <div key={c.k} className="kanban-col">
+            <div className="flex items-center gap-3 mb-4" style={{borderBottom:`2px solid ${c.c}`,paddingBottom:12}}>
+              <span className="font-bold text-sm uppercase">{c.l}</span>
+              <span className="badge" style={{background:c.c+'22',color:c.c}}>{tasks.filter(t=>t.estado===c.k).length}</span>
+            </div>
+            {tasks.filter(t=>t.estado===c.k).map(t=>(
+              <div key={t.id} className="task-card">
+                <div className="font-bold text-sm mb-4">{t.titulo}</div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted font-bold uppercase">{projects.find(p=>p.id===t.project_id)?.nombre.slice(0,15)}...</span>
+                  <div className="flex gap-2">
+                    {cols.filter(x=>x.k!==c.k).map(x=>(
+                      <button key={x.k} className="btn-ghost btn-sm" style={{fontSize:10,padding:'2px 6px'}} onClick={()=>update(t.id,x.k)}>{x.l[0]}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProjectHourGrid({projectId,profiles,hours,capacity,vacations,reload}){
+  const toast=useContext(ToastCtx);
+  const pHours=hours.filter(h=>h.project_id===projectId);
+  const startYear=ANIO_ACTUAL;
+  const [anio,setAnio]=useState(startYear);
+  const [edits,setEdits]=useState({});
+  const [dirty,setDirty]=useState(false);
+
+  const getH=(uid,mes)=>{
+    const key=`${uid}_${mes}`;
+    if(edits[key]!==undefined) return edits[key];
+    const rec=pHours.find(h=>h.user_id===uid && h.mes===mes && h.anio===anio);
+    return rec?Number(rec.horas_planificadas):0;
+  };
+  const setH=(uid,mes,val)=>{
+    setEdits(e=>({...e,[`${uid}_${mes}`]:Number(val)||0}));
+    setDirty(true);
+  };
+  const getCap=(u,mes)=>{
+    const rec=capacity.find(c=>c.user_id===u.id&&c.mes===mes&&c.anio===anio);
+    const base=rec?Math.max(0,(rec.horas_totales||160)-(rec.horas_ociosas||0)):(u.horas_disponibles_default||160);
+    return Math.max(0,base-calcVacHours(vacations,u.id,mes,anio));
+  };
+  const getTotalUser=(uid)=>{
+    let t=0;
+    for(let m=1;m<=12;m++){
+      const key=`${uid}_${m}`;
+      if(edits[key]!==undefined) t+=edits[key];
+      else { const r=pHours.find(h=>h.user_id===uid&&h.mes===m&&h.anio===anio); t+=r?Number(r.horas_planificadas):0; }
+    }
+    return t;
+  };
+  const getAllUserHours=(uid,mes)=>hours.filter(h=>h.user_id===uid&&h.mes===mes&&h.anio===anio).reduce((a,b)=>a+Number(b.horas_planificadas),0);
+
+  const save=async()=>{
+    for(const key of Object.keys(edits)){
+      const [uid,mesStr]=key.split('_');
+      const mes=parseInt(mesStr);
+      const val=edits[key];
+      const existing=pHours.find(h=>h.user_id===uid&&h.mes===mes&&h.anio===anio);
+      if(val>0&&existing) await sb.from('hour_assignments').update({horas_planificadas:val}).eq('id',existing.id);
+      else if(val>0&&!existing) await sb.from('hour_assignments').insert({project_id:projectId,user_id:uid,mes,anio,horas_planificadas:val});
+      else if(val===0&&existing) await sb.from('hour_assignments').delete().eq('id',existing.id);
+    }
+    setEdits({}); setDirty(false);
+    toast('Horas del proyecto guardadas');
+    reload();
+  };
+
+  return(
+    <div style={{marginBottom:60}}>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="section-title" style={{marginBottom:0}}>Carga Horaria del Proyecto</h3>
+        <div className="flex gap-4 items-center">
+          <button className="btn-ghost btn-sm" onClick={()=>{setAnio(a=>a-1);setEdits({});setDirty(false);}}>{anio-1}</button>
+          <span className="font-bold text-sm" style={{padding:'6px 16px',background:'var(--surface2)',borderRadius:8}}>{anio}</span>
+          <button className="btn-ghost btn-sm" onClick={()=>{setAnio(a=>a+1);setEdits({});setDirty(false);}}>{anio+1}</button>
+        </div>
+      </div>
+      <div className="card p-0 overflow-hidden">
+        <div className="custom-scrollbar" style={{overflowX:'auto'}}>
+          <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+            <thead>
+              <tr style={{background:'var(--surface2)'}}>
+                <th style={{padding:14,textAlign:'left',position:'sticky',left:0,background:'var(--surface2)',zIndex:10,minWidth:170}}>Recurso</th>
+                {MESES.map(m=><th key={m} style={{padding:10,textAlign:'center',minWidth:70}}>{m.slice(0,3)}</th>)}
+                <th style={{padding:14,textAlign:'center',minWidth:70}}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {profiles.map(u=>{
+                const totalProj=getTotalUser(u.id);
+                return(
+                  <tr key={u.id} style={{borderBottom:'1px solid var(--border)'}}>
+                    <td style={{padding:12,position:'sticky',left:0,background:'var(--surface)',zIndex:5}}>
+                      <div className="flex items-center gap-3"><Avatar name={u.nombre} size={22} color={u.avatar_color}/><span className="font-bold" style={{fontSize:12}}>{u.nombre}</span></div>
+                    </td>
+                    {MESES.map((_,i)=>{
+                      const h=getH(u.id,i+1);
+                      const allH=getAllUserHours(u.id,i+1);
+                      const mesCap=getCap(u,i+1);
+                      const pct=mesCap>0?Math.round((allH/mesCap)*100):0;
+                      const over=allH>mesCap;
+                      return(
+                        <td key={i} style={{padding:2,textAlign:'center',background:over?'rgba(239,68,68,0.08)':'transparent'}}>
+                          <input type="number" min="0" max="999" value={h||''} onChange={e=>setH(u.id,i+1,e.target.value)} style={{width:52,textAlign:'center',padding:'4px 2px',fontSize:12,background:h>0?'rgba(59,130,246,0.1)':'var(--surface2)',border:over?'1px solid var(--red)':'1px solid var(--border)',borderRadius:6}} placeholder="-" title={`Disponibles: ${mesCap}h`}/>
+                          {allH>0 && <div style={{fontSize:8,marginTop:1,fontWeight:700,color:over?'var(--red)':pct>=80?'var(--yellow)':'var(--green)'}}>{pct}%</div>}
+                        </td>
+                      )
+                    })}
+                    <td style={{padding:12,textAlign:'center',fontWeight:900,fontSize:13,color:totalProj>0?'var(--accent)':'var(--muted)'}}>{totalProj>0?totalProj+'h':'-'}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="flex justify-between items-center mt-4">
+        <span className="text-xs text-muted">El % muestra la ocupacion total del recurso (todos los proyectos). Rojo = sobrecarga.</span>
+        {dirty && <button className="btn" onClick={save}>Guardar Horas</button>}
+      </div>
+    </div>
+  );
+}
+
+function Hours(){
+  const {profiles,hours,projects,capacity,vacations}=useContext(DataCtx);
+  const [anio,setAnio]=useState(ANIO_ACTUAL);
+
+  const getH=(uid,mes)=>hours.filter(h=>h.user_id===uid && h.mes===mes && h.anio===anio).reduce((a,b)=>a+Number(b.horas_planificadas),0);
+  const getCap=(u,mes)=>{
+    const rec=capacity.find(c=>c.user_id===u.id&&c.mes===mes&&c.anio===anio);
+    const base=rec?Math.max(0,(rec.horas_totales||160)-(rec.horas_ociosas||0)):(u.horas_disponibles_default||160);
+    return Math.max(0,base-calcVacHours(vacations,u.id,mes,anio));
+  };
+  const getBreakdown=(uid,mes)=>hours.filter(h=>h.user_id===uid&&h.mes===mes&&h.anio===anio&&Number(h.horas_planificadas)>0);
+
+  return(
+    <div className="animate-in">
+      <div className="flex justify-between items-center mb-10">
+        <h2 className="section-title" style={{marginBottom:0}}>Resumen de Carga</h2>
+        <div className="flex gap-4 items-center">
+          <button className="btn-ghost btn-sm" onClick={()=>setAnio(a=>a-1)}>{anio-1}</button>
+          <span className="font-bold text-lg p-2 px-4 rounded bg-surface2">{anio}</span>
+          <button className="btn-ghost btn-sm" onClick={()=>setAnio(a=>a+1)}>{anio+1}</button>
+        </div>
+      </div>
+      <div className="text-sm text-muted mb-6">Vista consolidada de todos los proyectos. Para asignar horas, ingrese al detalle de cada proyecto.</div>
+      <div className="card p-0 overflow-hidden">
+        <div className="custom-scrollbar" style={{overflowX:'auto'}}>
+          <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+            <thead>
+              <tr style={{background:'var(--surface2)'}}>
+                <th style={{padding:16,textAlign:'left',position:'sticky',left:0,background:'var(--surface2)',zIndex:10,minWidth:180}}>Recurso</th>
+                {MESES.map(m=><th key={m} style={{padding:12,textAlign:'center',minWidth:80}}>{m.slice(0,3)}</th>)}
+                <th style={{padding:16,textAlign:'center'}}>Total Anual</th>
+              </tr>
+            </thead>
+            <tbody>
+              {profiles.map(u=>{
+                const totalAnual=MESES.reduce((a,_,i)=>a+getH(u.id,i+1),0);
+                return(
+                  <tr key={u.id} style={{borderBottom:'1px solid var(--border)'}}>
+                    <td style={{padding:16,position:'sticky',left:0,background:'var(--surface)',zIndex:5}}>
+                      <div className="flex items-center gap-3"><Avatar name={u.nombre} size={24} color={u.avatar_color}/> <span className="font-bold">{u.nombre}</span></div>
+                    </td>
+                    {MESES.map((_,i)=>{
+                      const h=getH(u.id,i+1);
+                      const mesCap=getCap(u,i+1);
+                      const pct=mesCap>0?Math.round((h/mesCap)*100):0;
+                      const over=h>mesCap;
+                      const bd=getBreakdown(u.id,i+1);
+                      const cellBg=over?'rgba(239,68,68,0.12)':h>0?'rgba(59,130,246,0.06)':'transparent';
+                      return(
+                        <td key={i} style={{padding:4,textAlign:'center',background:cellBg}} title={bd.map(x=>{const pj=projects.find(p=>p.id===x.project_id);return (pj?.nombre||'?')+': '+x.horas_planificadas+'h';}).join('\n')+'\nDisp: '+mesCap+'h'}>
+                          <div style={{padding:'6px 4px',borderRadius:6}}>
+                            <div style={{fontWeight:h>0?700:400,fontSize:13,color:over?'var(--red)':h>0?'var(--text)':'var(--muted)'}}>{h||'-'}</div>
+                            {h>0 && <div style={{fontSize:9,marginTop:2,fontWeight:600,color:over?'var(--red)':pct>=80?'var(--yellow)':'var(--green)'}}>{pct}%</div>}
+                          </div>
+                        </td>
+                      )
+                    })}
+                    <td style={{padding:16,textAlign:'center',fontWeight:900,color:'var(--accent)'}}>{totalAnual}h</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// RESTAURANDO AUDITORIA REAL
+function Audit(){
+  const {audit}=useContext(DataCtx);
+  return(
+    <div className="animate-in">
+      <h2 className="section-title">Log de Auditoria</h2>
+      <div className="card p-0 overflow-hidden">
+        <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
+          <thead><tr style={{background:'var(--surface2)',color:'var(--muted)'}}><th style={{padding:16,textAlign:'left'}}>Fecha</th><th style={{padding:16,textAlign:'left'}}>Usuario</th><th style={{padding:16,textAlign:'left'}}>Accion</th><th style={{padding:16,textAlign:'left'}}>Detalle</th></tr></thead>
+          <tbody>
+            {audit.map(l=>(
+              <tr key={l.id} style={{borderBottom:'1px solid var(--border)'}}>
+                <td style={{padding:16}}>{new Date(l.created_at).toLocaleString()}</td>
+                <td style={{padding:16}}><div className="flex items-center gap-2"><Avatar name={l.profiles?.nombre} size={20}/>{l.profiles?.nombre}</div></td>
+                <td style={{padding:16}}><span className="badge status-badge">{l.accion}</span></td>
+                <td style={{padding:16,color:'var(--muted)'}}>{l.descripcion}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function Vacations(){
+  const {profile}=useContext(AuthCtx);
+  const {vacations,profiles,reload}=useContext(DataCtx);
+  const toast=useContext(ToastCtx);
+  const admin=isAdmin(profile?.rol);
+  const [showForm,setShowForm]=useState(false);
+  const [vf,setVf]=useState({user_id:'',fecha_inicio:'',fecha_fin:'',tipo:'vacaciones',descripcion:''});
+  const [confirm,setConfirm]=useState(null);
+  const addVac=async()=>{
+    if(!vf.user_id||!vf.fecha_inicio||!vf.fecha_fin){toast('Complete todos los campos','error');return;}
+    await sb.from('vacations').insert({...vf,created_by:profile.id});
+    toast('Vacaciones registradas'); setShowForm(false); setVf({user_id:'',fecha_inicio:'',fecha_fin:'',tipo:'vacaciones',descripcion:''}); reload();
+  };
+  const delVac=async(id)=>{ await sb.from('vacations').delete().eq('id',id); toast('Vacaciones eliminadas'); reload(); };
+  return(
+    <div className="animate-in">
+      <div className="flex justify-between items-center mb-10">
+        <h2 className="section-title" style={{marginBottom:0}}>Calendario de Vacaciones</h2>
+        {admin && <button className="btn" onClick={()=>setShowForm(!showForm)}>Cargar Vacaciones</button>}
+      </div>
+      {showForm && <div className="card mb-10">
+        <div className="grid" style={{gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:16,alignItems:'end'}}>
+          <div className="form-group"><label>Recurso</label><select value={vf.user_id} onChange={e=>setVf({...vf,user_id:e.target.value})}><option value="">Seleccionar...</option>{profiles.map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}</select></div>
+          <div className="form-group"><label>Desde</label><input type="date" value={vf.fecha_inicio} onChange={e=>setVf({...vf,fecha_inicio:e.target.value})}/></div>
+          <div className="form-group"><label>Hasta</label><input type="date" value={vf.fecha_fin} onChange={e=>setVf({...vf,fecha_fin:e.target.value})}/></div>
+          <div className="form-group"><button className="btn" onClick={addVac}>Guardar</button></div>
+        </div>
+      </div>}
+      <div className="grid md-grid-3 gap-8">
+        {vacations.map(v=>(
+          <div key={v.id} className="card flex items-center gap-4">
+            <Avatar name={profiles.find(p=>p.id===v.user_id)?.nombre}/>
+            <div className="flex-1"><div className="font-bold">{profiles.find(p=>p.id===v.user_id)?.nombre}</div><div className="text-xs text-muted">{v.fecha_inicio} al {v.fecha_fin}</div></div>
+            {admin && <button className="btn-danger btn-sm" onClick={()=>setConfirm(v.id)}>Borrar</button>}
+          </div>
+        ))}
+        {vacations.length===0 && <div className="card text-center p-10 text-muted" style={{gridColumn:'1/-1'}}>No hay vacaciones programadas.</div>}
+      </div>
+      <ConfirmModal open={!!confirm} onClose={()=>setConfirm(null)} onConfirm={()=>delVac(confirm)} title="Eliminar estas vacaciones?"/>
+    </div>
+  );
+}
+
+function Config(){
+  const {profiles,capacity,vacations,reload}=useContext(DataCtx);
+  const toast=useContext(ToastCtx);
+  const [anio,setAnio]=useState(ANIO_ACTUAL);
+  const [edits,setEdits]=useState({});
+  const [dirty,setDirty]=useState(false);
+
+  const getCap=(uid,mes)=>{
+    const key=`${uid}_${mes}`;
+    if(edits[key]) return edits[key];
+    const rec=capacity.find(c=>c.user_id===uid&&c.mes===mes&&c.anio===anio);
+    const prof=profiles.find(p=>p.id===uid);
+    const defH=prof?.horas_disponibles_default||160;
+    return {totales:rec?.horas_totales??defH, ociosas:rec?.horas_ociosas??0};
+  };
+  const setVal=(uid,mes,field,val)=>{
+    const cur=getCap(uid,mes);
+    setEdits(e=>({...e,[`${uid}_${mes}`]:{...cur,[field]:Number(val)||0}}));
+    setDirty(true);
+  };
+
+  const save=async()=>{
+    for(const key of Object.keys(edits)){
+      const [uid,mesStr]=key.split('_');
+      const mes=parseInt(mesStr);
+      const v=edits[key];
+      const disp=Math.max(0,(v.totales||0)-(v.ociosas||0));
+      const existing=capacity.find(c=>c.user_id===uid&&c.mes===mes&&c.anio===anio);
+      const payload={user_id:uid,mes,anio,horas_totales:v.totales||160,horas_ociosas:v.ociosas||0,horas_disponibles:disp};
+      if(existing) await sb.from('user_capacity').update(payload).eq('id',existing.id);
+      else await sb.from('user_capacity').insert(payload);
+    }
+    setEdits({}); setDirty(false);
+    toast('Capacidades actualizadas');
+    reload();
+  };
+
+  return(
+    <div className="animate-in">
+      <h2 className="section-title">Configuracion del Sistema</h2>
+
+      <div className="flex justify-between items-center mb-6">
+        <h3 style={{fontSize:20,fontWeight:800}}>Capacidad Mensual por Recurso</h3>
+        <div className="flex gap-4 items-center">
+          <button className="btn-ghost btn-sm" onClick={()=>{setAnio(a=>a-1);setEdits({});setDirty(false);}}>{anio-1}</button>
+          <span className="font-bold text-sm" style={{padding:'6px 16px',background:'var(--surface2)',borderRadius:8}}>{anio}</span>
+          <button className="btn-ghost btn-sm" onClick={()=>{setAnio(a=>a+1);setEdits({});setDirty(false);}}>{anio+1}</button>
+        </div>
+      </div>
+
+      {profiles.map(u=>{
+        const totalAnual={totales:0,ociosas:0,disp:0};
+        MESES.forEach((_,i)=>{const c=getCap(u.id,i+1);const vh=calcVacHours(vacations,u.id,i+1,anio);totalAnual.totales+=c.totales;totalAnual.ociosas+=c.ociosas;totalAnual.disp+=Math.max(0,c.totales-c.ociosas-vh);});
+        return(
+          <div key={u.id} className="card mb-6" style={{padding:20}}>
+            <div className="flex items-center gap-3 mb-4">
+              <Avatar name={u.nombre} size={28} color={u.avatar_color}/>
+              <span className="font-bold">{u.nombre}</span>
+              <span className="badge status-badge" style={{fontSize:10}}>{u.rol}</span>
+              <span className="text-xs text-muted" style={{marginLeft:'auto'}}>Anual: {totalAnual.totales}h totales, {totalAnual.ociosas}h ociosas, {totalAnual.disp}h disponibles</span>
+            </div>
+            <div className="custom-scrollbar" style={{overflowX:'auto'}}>
+              <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
+                <thead>
+                  <tr style={{background:'var(--surface2)'}}>
+                    <th style={{padding:8,textAlign:'left',minWidth:90}}></th>
+                    {MESES.map(m=><th key={m} style={{padding:6,textAlign:'center',minWidth:62}}>{m.slice(0,3)}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{borderBottom:'1px solid var(--border)'}}>
+                    <td style={{padding:8,fontSize:11,fontWeight:700,color:'var(--muted)'}}>Totales</td>
+                    {MESES.map((_,i)=>{
+                      const c=getCap(u.id,i+1);
+                      return <td key={i} style={{padding:3,textAlign:'center'}}><input type="number" min="0" max="999" value={c.totales||''} onChange={e=>setVal(u.id,i+1,'totales',e.target.value)} style={{width:50,textAlign:'center',padding:'3px 2px',fontSize:11,borderRadius:4,background:'var(--surface2)',border:'1px solid var(--border)'}} placeholder="160"/></td>
+                    })}
+                  </tr>
+                  <tr style={{borderBottom:'1px solid var(--border)'}}>
+                    <td style={{padding:8,fontSize:11,fontWeight:700,color:'var(--orange)'}}>Ociosas</td>
+                    {MESES.map((_,i)=>{
+                      const c=getCap(u.id,i+1);
+                      return <td key={i} style={{padding:3,textAlign:'center'}}><input type="number" min="0" max="999" value={c.ociosas||''} onChange={e=>setVal(u.id,i+1,'ociosas',e.target.value)} style={{width:50,textAlign:'center',padding:'3px 2px',fontSize:11,borderRadius:4,background:'var(--surface2)',border:'1px solid var(--border)'}} placeholder="0"/></td>
+                    })}
+                  </tr>
+                  <tr style={{borderBottom:'1px solid var(--border)'}}>
+                    <td style={{padding:8,fontSize:11,fontWeight:700,color:'var(--accent)'}}>Vacaciones</td>
+                    {MESES.map((_,i)=>{
+                      const vh=calcVacHours(vacations,u.id,i+1,anio);
+                      return <td key={i} style={{padding:6,textAlign:'center',fontWeight:600,fontSize:11,color:vh>0?'var(--accent)':'var(--muted)'}}>{vh>0?vh+'h':'-'}</td>
+                    })}
+                  </tr>
+                  <tr>
+                    <td style={{padding:8,fontSize:11,fontWeight:700,color:'var(--green)'}}>Disponibles</td>
+                    {MESES.map((_,i)=>{
+                      const c=getCap(u.id,i+1);
+                      const vh=calcVacHours(vacations,u.id,i+1,anio);
+                      const disp=Math.max(0,c.totales-c.ociosas-vh);
+                      return <td key={i} style={{padding:6,textAlign:'center',fontWeight:700,fontSize:12,color:disp<=0?'var(--red)':'var(--green)'}}>{disp}h</td>
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
+      })}
+      {dirty && <div className="flex justify-end mt-4"><button className="btn" onClick={save}>Guardar Capacidades</button></div>}
+    </div>
+  );
+}
+
+function Equipo(){
+  const {profiles,hours,reload}=useContext(DataCtx);
+  const {profile}=useContext(AuthCtx);
+  const toast=useContext(ToastCtx);
+  const mesActual=new Date().getMonth()+1;
+  const [showForm,setShowForm]=useState(false);
+  const [editingMember,setEditingMember]=useState(null);
+  const [f,setF]=useState({nombre:'',username:'',rol:'junior',horas_disponibles_default:160,avatar_color:'#3b82f6'});
+  const [confirmDel,setConfirmDel]=useState(null);
+
+  const startEdit = (u) => {
+    setEditingMember(u);
+    setF({
+      nombre: u.nombre,
+      username: u.username,
+      rol: u.rol,
+      horas_disponibles_default: u.horas_disponibles_default || 160,
+      avatar_color: u.avatar_color
+    });
+    setShowForm(true);
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingMember(null);
+    setF({nombre:'',username:'',rol:'junior',horas_disponibles_default:160,avatar_color:'#3b82f6'});
+  };
+
+  const save=async()=>{
+    if(!f.nombre||!f.username){toast('Nombre y usuario son requeridos','error');return;}
+    const cleanUsername = f.username.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const payload = {
+      nombre: f.nombre,
+      username: cleanUsername,
+      rol: f.rol,
+      avatar_color: f.avatar_color
+    };
+
+    if (editingMember) {
+      const {error} = await sb.from('profiles').update(payload).eq('id', editingMember.id);
+      if(error){
+        toast('Error al actualizar integrante: ' + error.message, 'error');
+      } else {
+        toast('Integrante actualizado con éxito','success');
+        closeForm();
+        reload();
+      }
+    } else {
+      payload.horas_disponibles_default = 160; // 160h base por defecto, se configura mes a mes en Configuración
+      const {error} = await sb.from('profiles').insert(payload);
+      if(error){
+        toast('Error al crear miembro. Verificá que el usuario no esté duplicado: ' + error.message, 'error');
+      } else {
+        toast('¡Integrante agregado! Ya aparece en proyectos, horas y dashboards.','success');
+        closeForm();
+        reload();
+      }
+    }
+  };
+
+  const del=async(id)=>{
+    const member = profiles.find(p=>p.id===id);
+    const isSystemUser = member?.auth_user_id || member?.id === profile?.id;
+    if(isSystemUser){
+      toast('No podés eliminar un usuario administrador registrado', 'error');
+      return;
+    }
+    const {error} = await sb.from('profiles').delete().eq('id',id);
+    if(error){
+      toast('Error al eliminar: ' + error.message, 'error');
+    } else {
+      toast('Integrante eliminado','success');
+      reload();
+    }
+  };
+
+  const isRegistered=(u)=> u?.auth_user_id || u?.id === profile?.id;
+  const getHorasMes=(uid)=>hours.filter(h=>h.user_id===uid&&h.mes===mesActual&&h.anio===ANIO_ACTUAL).reduce((a,b)=>a+Number(b.horas_planificadas),0);
+  const getCapMes=(u)=>u.horas_disponibles_default||160;
+
+  return(
+    <div className="animate-in">
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h2 className="section-title" style={{marginBottom:4}}>Mi Equipo</h2>
+          <p className="text-sm text-muted">Los integrantes que agregues aparecen automáticamente en proyectos, horas y dashboards.</p>
+        </div>
+        <button className="btn" onClick={()=>setShowForm(true)}>+ Agregar Integrante</button>
+      </div>
+
+      <div className="card mb-8" style={{padding:'12px 20px',display:'flex',alignItems:'center',gap:24,background:'rgba(59,130,246,0.05)',border:'1px solid rgba(59,130,246,0.2)'}}>
+        <div style={{fontSize:28,fontWeight:900,color:'var(--accent)'}}>{profiles.length}</div>
+        <div className="text-sm text-muted">integrantes en tu equipo</div>
+        <div style={{marginLeft:'auto',fontSize:28,fontWeight:900,color:'var(--green)'}}>{profiles.filter(u=>!isRegistered(u)).length}</div>
+        <div className="text-sm text-muted">virtuales (sin login)</div>
+        <div style={{marginLeft:'auto',fontSize:28,fontWeight:900,color:'var(--accent)'}}>{profiles.filter(u=>isRegistered(u)).length}</div>
+        <div className="text-sm text-muted">administradores con cuenta</div>
+      </div>
+
+      {showForm && (
+        <div className="card mb-10" style={{maxWidth:520}}>
+          <h3 className="mb-6" style={{fontSize:18,fontWeight:800}}>{editingMember ? 'Editar Integrante' : 'Nuevo Integrante del Equipo'}</h3>
+          <div className="form-group"><label>Nombre Completo *</label><input value={f.nombre} onChange={e=>setF({...f,nombre:e.target.value})} placeholder="Ej. Juan Pérez"/></div>
+          <div className="form-group"><label>Usuario * (sin espacios ni caracteres especiales)</label><input value={f.username} onChange={e=>setF({...f,username:e.target.value})} placeholder="ej. juanperez" disabled={editingMember && isRegistered(editingMember)}/></div>
+          <div className="grid" style={{gridTemplateColumns:'1fr',gap:16}}>
+            <div className="form-group">
+              <label>Rol</label>
+              <select value={f.rol} onChange={e=>setF({...f,rol:e.target.value})}>
+                <option value="junior">Junior</option>
+                <option value="semisenior">SemiSenior</option>
+                <option value="senior">Senior</option>
+                <option value="gerente">Gerente</option>
+              </select>
+            </div>
+          </div>
+          <div className="form-group">
+            <label>Color de Avatar</label>
+            <div className="flex gap-3 mt-2">
+              {['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#ec4899','#06b6d4','#84cc16'].map(c=>(
+                <div key={c} onClick={()=>setF({...f,avatar_color:c})} style={{width:28,height:28,borderRadius:'50%',background:c,cursor:'pointer',border:f.avatar_color===c?'3px solid white':'3px solid transparent',boxShadow:f.avatar_color===c?`0 0 0 2px ${c}`:'none',transition:'.2s'}}/>
+              ))}
+            </div>
+          </div>
+          <div style={{background:'rgba(59,130,246,0.05)',border:'1px solid rgba(59,130,246,0.15)',borderRadius:8,padding:'10px 14px',marginBottom:16}}>
+            <p className="text-xs text-muted">💡 Los roles determinan los permisos. Los administradores ('gerente' o 'senior') pueden crear proyectos, etapas y administrar el equipo.</p>
+          </div>
+          <div className="flex justify-between mt-4">
+            <button className="btn-ghost" onClick={closeForm}>Cancelar</button>
+            <button className="btn" onClick={save}>{editingMember ? 'Actualizar' : 'Guardar Integrante'}</button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid" style={{gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))',gap:20}}>
+        {profiles.map(u=>{
+          const horasMes=getHorasMes(u.id);
+          const capMes=getCapMes(u);
+          const pct=capMes>0?Math.round((horasMes/capMes)*100):0;
+          const over=horasMes>capMes;
+          return(
+            <div key={u.id} className="card" style={{padding:20}}>
+              <div className="flex items-center gap-4 mb-4">
+                <Avatar name={u.nombre} color={u.avatar_color} size={44}/>
+                <div className="flex-1">
+                  <div className="font-bold flex items-center gap-2">
+                    {u.nombre}
+                    {isRegistered(u)
+                      ? <span className="badge" style={{background:'var(--accent)',color:'#fff',fontSize:8,padding:'2px 6px'}}>ADMIN</span>
+                      : <span className="badge" style={{background:'var(--surface2)',color:'var(--muted)',fontSize:8,padding:'2px 6px'}}>VIRTUAL</span>
+                    }
+                  </div>
+                  <div className="text-xs text-muted">@{u.username} · {u.rol.toUpperCase()}</div>
+                </div>
+              </div>
+              <div style={{marginBottom:10}}>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-muted">Carga {MESES[mesActual-1]}</span>
+                  <span style={{fontWeight:700,color:over?'var(--red)':pct>=80?'var(--yellow)':'var(--green)'}}>{horasMes>0?`${horasMes}h / ${capMes}h (${pct}%)`:`Sin horas asignadas`}</span>
+                </div>
+                {horasMes>0 && <ProgressBar value={Math.min(pct,100)} color={over?'var(--red)':pct>=80?'var(--yellow)':'var(--green)'}/>}
+              </div>
+              <div className="flex justify-between items-center" style={{borderTop:'1px solid var(--border)',paddingTop:12}}>
+                <span className="text-xs text-muted">{capMes}h disponibles/mes</span>
+                <div className="flex gap-2">
+                  <button className="btn-ghost btn-sm" style={{fontSize:11,padding:'4px 8px'}} onClick={()=>startEdit(u)}>Editar</button>
+                  {!isRegistered(u) && (
+                    <button className="btn-danger btn-sm" style={{fontSize:11,padding:'4px 8px'}} onClick={()=>setConfirmDel(u.id)}>Eliminar</button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <ConfirmModal open={!!confirmDel} onClose={()=>setConfirmDel(null)} onConfirm={()=>del(confirmDel)} title="¿Eliminar este integrante del equipo?"/>
+    </div>
+  );
+}
+
+function MainLayout(){
+  const {profile}=useContext(AuthCtx);
+  const [page,setPage]=useState('dashboard');
+  const [selId,setSelId]=useState(null);
+  const [dark,setDark]=useState(()=>{const s=localStorage.getItem('tf_dark');return s===null?true:s==='true';});
+  useEffect(()=>{document.body.className=dark?'':'light';localStorage.setItem('tf_dark',dark);},[dark]);
+
+  const render=()=>{
+    switch(page){
+      case 'dashboard': return <Dashboard/>;
+      case 'projects': return <ProjectList onSelect={(id)=>{setSelId(id);setPage('detail');}}/>;
+      case 'detail': return <ProjectDetail projectId={selId} setPage={setPage}/>;
+      case 'tasks': return <Tasks/>;
+      case 'hours': return <Hours/>;
+      case 'vacations': return <Vacations/>;
+      case 'audit': return <Audit/>;
+      case 'config': return <Config/>;
+      case 'equipo': return <Equipo/>;
+      default: return <Dashboard/>;
+    }
+  };
+
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <div className="p-8 mb-4"><h1 style={{color:'var(--accent)',fontSize:24,fontWeight:900,letterSpacing:'-1px'}}>TeamFlow</h1></div>
+        <div className={`nav-item ${page==='dashboard'?'active':''}`} onClick={()=>setPage('dashboard')}>Tablero General</div>
+        <div className={`nav-item ${page==='projects'||page==='detail'?'active':''}`} onClick={()=>setPage('projects')}>Gestion Proyectos</div>
+        <div className={`nav-item ${page==='tasks'?'active':''}`} onClick={()=>setPage('tasks')}>Muro de Tareas</div>
+        <div className={`nav-item ${page==='hours'?'active':''}`} onClick={()=>setPage('hours')}>Carga Horaria</div>
+        <div className={`nav-item ${page==='vacations'?'active':''}`} onClick={()=>setPage('vacations')}>Vacaciones</div>
+        {isAdmin(profile?.rol) && <div className={`nav-item ${page==='equipo'?'active':''}`} onClick={()=>setPage('equipo')}>Mi Equipo</div>}
+        {isAdmin(profile?.rol) && <div className={`nav-item ${page==='audit'?'active':''}`} onClick={()=>setPage('audit')}>Auditoria</div>}
+        {isAdmin(profile?.rol) && <div className={`nav-item ${page==='config'?'active':''}`} onClick={()=>setPage('config')}>Configuracion</div>}
+        <div className="mt-auto p-6"><button className="btn-ghost w-full btn-sm" onClick={()=>sb.auth.signOut()}>Cerrar Sesion</button></div>
+      </div>
+      <div className="main">
+        <header className="header">
+          <div className="flex items-center gap-4">
+            <span style={{color:'var(--muted)',fontSize:14}}>Sesion de:</span>
+            <Avatar name={profile?.nombre} size={32} color={profile?.avatar_color}/>
+            <strong style={{fontSize:15}}>{profile?.nombre}</strong>
+            <span className="badge status-badge" style={{fontSize:9}}>{profile?.rol}</span>
+          </div>
+          <button className="toggle-theme" onClick={()=>setDark(d=>!d)}>{dark?'Modo Claro':'Modo Oscuro'}</button>
+        </header>
+        <div className="content custom-scrollbar">{render()}</div>
+      </div>
+    </div>
+  );
+}
+
+function ResetPassword({onComplete}){
+  const [newPass,setNewPass]=useState('');
+  const toast=useContext(ToastCtx);
+  const handle=async(e)=>{
+    e.preventDefault();
+    if(newPass.length < 6){
+      toast('La contraseña debe tener al menos 6 caracteres','error');
+      return;
+    }
+    const {error}=await sb.auth.updateUser({password:newPass});
+    if(error){
+      toast(error.message,'error');
+    } else {
+      toast('Contraseña restablecida con éxito','success');
+      // Clean hash from URL
+      window.history.replaceState(null, null, window.location.pathname);
+      onComplete();
+    }
+  };
+  return(
+    <div className="flex items-center justify-center" style={{minHeight:'100vh',background:'radial-gradient(circle at top right, var(--surface), var(--bg))'}}>
+      <div className="card animate-in" style={{width:400,padding:40}}>
+        <h1 style={{textAlign:'center',marginBottom:20,fontSize:32,fontWeight:900,color:'var(--accent)'}}>TeamFlow</h1>
+        <h3 className="mb-6" style={{textAlign:'center',fontSize:16,fontWeight:600}}>Restablecer Contraseña</h3>
+        <p className="text-xs text-muted mb-6 text-center">Ingresá tu nueva contraseña para acceder a tu cuenta.</p>
+        <form onSubmit={handle} className="flex flex-col gap-6">
+          <div className="form-group"><label>Nueva Contraseña</label><input type="password" value={newPass} onChange={e=>setNewPass(e.target.value)} required placeholder="Mínimo 6 caracteres"/></div>
+          <button className="btn w-full" style={{padding:14,fontSize:16}}>Actualizar Contraseña</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const {user,profile,loading}=useContext(AuthCtx);
+  const [isRecovering,setIsRecovering]=useState(false);
+  useEffect(()=>{
+    if(window.location.hash && window.location.hash.includes('type=recovery')){
+      setIsRecovering(true);
+    }
+  },[]);
+
+  if(loading) return <div className="flex items-center justify-center" style={{height:'100vh',background:'var(--bg)'}}><div style={{color:'var(--muted)',fontWeight:600,fontSize:18}}>Cargando TeamFlow...</div></div>;
+  if(isRecovering) return <ResetPassword onComplete={()=>setIsRecovering(false)}/>;
+  return user && profile ? <MainLayout/> : <Login/>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<ToastProvider><AuthProvider><DataProvider><App/></DataProvider></AuthProvider></ToastProvider>);
+</script>
+</body>
+</html>
